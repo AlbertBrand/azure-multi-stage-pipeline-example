@@ -27,7 +27,7 @@ stages:
           - script: npm test
             displayName: 'Run unit tests'
 
-          - script: npm run build
+          - script: npm run build:wc
             displayName: 'Build for production'
 
           - publish: dist
