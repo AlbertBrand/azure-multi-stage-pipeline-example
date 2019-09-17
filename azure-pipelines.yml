@@ -1,0 +1,55 @@
+trigger:
+- master
+
+stages:
+  - stage: Build
+    displayName: Build stage
+    jobs:
+      - job: Build
+        displayName: Build job
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '10.x'
+            displayName: 'Install Node.js'
+
+          - task: Npm@1
+            inputs:
+              command: custom
+              customCommand: ci
+            displayName: 'Run npm install for CI'
+
+          - script: npm run lint -- --no-fix --max-warnings 0
+            displayName: 'Run lint check'
+
+          - script: npm test
+            displayName: 'Run unit tests'
+
+          - script: npm run build
+            displayName: 'Build for production'
+
+          - publish: dist
+            artifact: dist
+            condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+
+  - stage: Deploy
+    displayName: Deploy stage
+    dependsOn: Build
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+    jobs:
+      - job: Deploy
+        displayName: Deploy job
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: none
+          - download: current
+
+          - task: AzureCLI@1
+            inputs:
+              azureSubscription: 'Free Trial(74d0a58e-cb3e-4667-b07d-7f42fdb2d19a)'
+              scriptLocation: 'inlineScript'
+              inlineScript: az storage blob upload-batch --account-name frontbrand -d \$web -s $(Pipeline.Workspace)/dist
+            displayName: Deploy frontend files
