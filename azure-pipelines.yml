@@ -15,17 +15,11 @@ stages:
               versionSpec: '10.x'
             displayName: 'Install Node.js'
 
-          - task: Npm@1
-            inputs:
-              command: custom
-              customCommand: ci
+          - script: npm ci
             displayName: 'Run npm install for CI'
 
           - script: npm run lint -- --no-fix --max-warnings 0
             displayName: 'Run lint check'
-
-          - script: npm test
-            displayName: 'Run unit tests'
 
           - script: npm run build:wc
             displayName: 'Build for production'
